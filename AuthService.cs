@@ -30,7 +30,7 @@ namespace Taesa.Auth
 
         private MultipartFormDataContent FormDataContent(string key)
         {
-            return new()
+            return new MultipartFormDataContent()
             {
                 {new StringContent(ApplicationUser), "login"},
                 {new StringContent(ApplicationPassword), "senha"},
