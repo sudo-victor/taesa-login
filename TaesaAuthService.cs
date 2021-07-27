@@ -1,23 +1,29 @@
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Taesa.Auth
 {
-    public class AuthService
+    public class TaesaAuthService
     {
         public readonly string ApplicationUser;
         public readonly string ApplicationPassword;
         public readonly string ApplicationUrl;
 
-        public AuthService(string url, string applicationUser, string applicationPassword)
+        private TaesaAuthService(string url, string applicationUser, string applicationPassword)
         {
             ApplicationPassword = applicationPassword;
             ApplicationUser = applicationUser;
             ApplicationUrl = url;
+        }
+
+        public TaesaAuthService(TaesaAuthSettings settings) : this(settings.Url, settings.User, settings.Password)
+        {
+            
         }
 
         private HttpClient GetClient()
@@ -38,7 +44,7 @@ namespace Taesa.Auth
             };
         }
 
-        public async Task<User> Authenticate(string key)
+        public async Task<JwtSecurityToken> Authenticate(string key)
         {
             using var client = GetClient();
             var body = FormDataContent(key);
@@ -63,8 +69,12 @@ namespace Taesa.Auth
                 throw new AuthException("O token não pode ser lido!");
             }
 
+
             var jwtToken = handler.ReadJwtToken(tokenHeader);
-            return JsonConvert.DeserializeObject<User>(jwtToken.Payload.SerializeToJson());
+
+            if (jwtToken.ValidTo < DateTime.Now)
+                throw new SecurityTokenExpiredException();
+            return jwtToken;
         }
     }
 }
