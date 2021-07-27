@@ -2,17 +2,24 @@
 
     <PropertyGroup>
         <TargetFrameworks>netcoreapp3.1; net5.0</TargetFrameworks>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Title>Login Piaget</Title>
+        <Description>Biblioteca de login Taesa Piaget</Description>
+        <PackageProjectUrl>https://github.com/LojaInterativa/taesa-login</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/LojaInterativa/taesa-login</RepositoryUrl>
+        <PackageTags>Taesa</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="5.5.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1"/>
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="5.5.0"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.8" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.8"/>
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2"/>
     </ItemGroup>
 </Project>
