@@ -3,6 +3,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
 
@@ -13,17 +16,21 @@ namespace Taesa.Auth
         public readonly string ApplicationUser;
         public readonly string ApplicationPassword;
         public readonly string ApplicationUrl;
+        public SecurityKey Key { get; }
 
-        private TaesaAuthService(string url, string applicationUser, string applicationPassword)
+        public TaesaAuthService(SecurityKey applicationScretKey, string url, string applicationUser,
+            string applicationPassword)
         {
             ApplicationPassword = applicationPassword;
             ApplicationUser = applicationUser;
             ApplicationUrl = url;
+            Key = applicationScretKey; 
         }
 
-        public TaesaAuthService(TaesaAuthSettings settings) : this(settings.Url, settings.User, settings.Password)
+        public TaesaAuthService(SecurityKey key, TaesaAuthSettings settings) : this(key,
+            settings.Url, settings.User,
+            settings.Password)
         {
-            
         }
 
         private HttpClient GetClient()
@@ -42,6 +49,26 @@ namespace Taesa.Auth
                 {new StringContent(ApplicationPassword), "senha"},
                 {new StringContent(key), "chave_acesso"}
             };
+        }
+
+        public string GenerateToken(JwtSecurityToken token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var identity = new ClaimsIdentity(new[]
+            {
+                new Claim("TaesaToken", token.RawData)
+            });
+            var tokenDescriptior = new SecurityTokenDescriptor()
+            {
+                Subject = identity,
+                Audience = "TaesaAudience",
+                Issuer = "TaesaIssuer",
+                Expires = token.ValidTo,
+                NotBefore = token.ValidFrom,
+                SigningCredentials = new SigningCredentials(Key, SecurityAlgorithms.HmacSha256Signature)
+            };
+            var wrapped = handler.CreateJwtSecurityToken(tokenDescriptior);
+            return handler.WriteToken(wrapped);
         }
 
         public async Task<JwtSecurityToken> Authenticate(string key)
@@ -75,6 +102,12 @@ namespace Taesa.Auth
             if (jwtToken.ValidTo < DateTime.Now)
                 throw new SecurityTokenExpiredException();
             return jwtToken;
+        }
+
+        public async Task<string> Login(string chaveAcesso)
+        {
+            var token = await Authenticate(chaveAcesso);
+            return GenerateToken(token);
         }
     }
 }
