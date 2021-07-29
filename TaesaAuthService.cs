@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
@@ -8,6 +9,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Taesa.Auth
 {
@@ -24,7 +27,7 @@ namespace Taesa.Auth
             ApplicationPassword = applicationPassword;
             ApplicationUser = applicationUser;
             ApplicationUrl = url;
-            Key = applicationScretKey; 
+            Key = applicationScretKey;
         }
 
         public TaesaAuthService(SecurityKey key, TaesaAuthSettings settings) : this(key,
@@ -54,10 +57,14 @@ namespace Taesa.Auth
         public string GenerateToken(JwtSecurityToken token)
         {
             var handler = new JwtSecurityTokenHandler();
-            var identity = new ClaimsIdentity(new[]
-            {
-                new Claim("TaesaToken", token.RawData)
-            });
+
+
+            var identity = new ClaimsIdentity(token.Claims.Concat(new[]
+                {
+                    new Claim("header", token.RawHeader),
+                    new Claim("signature", token.RawSignature)
+                })
+            );
             var tokenDescriptior = new SecurityTokenDescriptor()
             {
                 Subject = identity,
@@ -104,10 +111,57 @@ namespace Taesa.Auth
             return jwtToken;
         }
 
-        public async Task<string> Login(string chaveAcesso)
+        public async Task<string> LoginAsync(string chaveAcesso)
         {
             var token = await Authenticate(chaveAcesso);
             return GenerateToken(token);
+        }
+
+        public User GetUser(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(token))
+            {
+                throw new AuthException("O token não pode ser lido!");
+            }
+
+            var jwtToken = handler.ReadJwtToken(token);
+            var json = jwtToken.Payload.SerializeToJson();
+
+
+            var jUser = JObject.Parse(json);
+
+            var response = JsonConvert.DeserializeObject<UserResponse>(json);
+            if (response is null)
+                throw new AuthException("Não foi possível extrair as informações do usuário");
+
+            var user = new User()
+            {
+                Email = response.Email,
+                Nome = response.Nome,
+                Id_Usuario = response.Id_Usuario,
+                Grupos = new List<Grupo>()
+            };
+
+
+            if (jUser.ContainsKey("grupos"))
+            {
+                if (jUser["grupos"].Type == JTokenType.Array)
+                {
+                    user.Grupos = jUser["grupos"].ToObject<List<Grupo>>();
+                }
+                else
+                {
+                    var grupo = jUser["grupos"].ToObject<Grupo>();
+                    user.Grupos = new List<Grupo>() {grupo};
+                }
+            }
+            else
+            {
+                throw new AuthException("Grupos não encontrato");
+            }
+
+            return user;
         }
     }
 }
