@@ -1,16 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 
+// ReSharper disable InconsistentNaming
+
 namespace Taesa.Auth
 {
-    public class User
+    public class UserResponse
     {
-        public string Iss { get; set; }
-        public long Exp { get; set; }
         public string Nome { get; set; }
         public string Email { get; set; }
-        public long IdUsuario { get; set; }
-        public List<Grupo> Grupos { get; set; }
+        public int Id_Usuario { get; set; }
+
+        public object Grupos { get; set; }
+    }
+
+    public class User : UserResponse
+    {
+        public new List<Grupo> Grupos { get; set; }
     }
 
     public class Grupo
@@ -20,9 +26,9 @@ namespace Taesa.Auth
 
     public class AcessoGrupo
     {
-        public string NmGrupo { get; set; }
-        public string DsGrupo { get; set; }
-        public long IdAcessoGrupo { get; set; }
-        public bool InTemplate { get; set; }
+        public string Nm_Grupo { get; set; }
+        public string Ds_Grupo { get; set; }
+        public int Id_Acesso_Grupo { get; set; }
+        public bool In_Template { get; set; }
     }
 }
